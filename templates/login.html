@@ -1,0 +1,47 @@
+{% extends "base.html" %}
+
+{% block title %}Login - Business Card Generator{% endblock %}
+
+{% block content %}
+<div class="card">
+    <div class="header">
+        <h1><i class="fas fa-sign-in-alt"></i> Welcome Back</h1>
+        <p>Login to your account to manage your business cards</p>
+    </div>
+
+    {% if error %}
+    <div class="alert alert-error">
+        <i class="fas fa-exclamation-triangle"></i> {{ error }}
+    </div>
+    {% endif %}
+
+    <form method="POST" action="{{ url_for('login') }}">
+        <div class="form-group">
+            <label for="email">
+                <i class="fas fa-envelope"></i> Email Address
+            </label>
+            <input type="email" id="email" name="email" class="form-control" required 
+                   placeholder="Enter your email address">
+        </div>
+
+        <div class="form-group">
+            <label for="password">
+                <i class="fas fa-lock"></i> Password
+            </label>
+            <input type="password" id="password" name="password" class="form-control" required 
+                   placeholder="Enter your password">
+        </div>
+
+        <button type="submit" class="btn" style="width: 100%;">
+            <i class="fas fa-sign-in-alt"></i> Login
+        </button>
+    </form>
+
+    <div class="nav-links">
+        <p>Don't have an account? <a href="{{ url_for('register') }}">Register here</a></p>
+        <a href="{{ url_for('home') }}" class="btn btn-outline">
+            <i class="fas fa-home"></i> Back to Home
+        </a>
+    </div>
+</div>
+{% endblock %}

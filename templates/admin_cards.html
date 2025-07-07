@@ -1,0 +1,15 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>All Cards (Admin)</title>
+</head>
+<body>
+    <h2>All Cards (Admin Only)</h2>
+    <ul>
+        {% for card in cards %}
+            <li>{{ card.name }} - {{ card.email }} (User ID: {{ card.user_id }})</li>
+        {% endfor %}
+    </ul>
+    <a href="/dashboard">Back to Dashboard</a>
+</body>
+</html>

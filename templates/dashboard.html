@@ -1,0 +1,88 @@
+{% extends "base.html" %}
+
+{% block title %}Dashboard - Business Card Generator{% endblock %}
+
+{% block content %}
+<div class="user-info">
+    <h2><i class="fas fa-user-circle"></i> Welcome, {{ user.name }}</h2>
+    <p class="role">
+        <i class="fas fa-crown"></i> {{ user.role|title }} Account
+    </p>
+</div>
+
+<div class="card">
+    <div class="header">
+        <h1><i class="fas fa-tachometer-alt"></i> Your Dashboard</h1>
+        <p>Manage your business cards and create new ones</p>
+    </div>
+
+    {% if can_create %}
+    <div style="text-align: center; margin-bottom: 30px;">
+        <a href="{{ url_for('new_card') }}" class="btn btn-success">
+            <i class="fas fa-plus"></i> Create New Card
+        </a>
+    </div>
+    {% else %}
+    <div class="alert alert-warning">
+        <i class="fas fa-info-circle"></i> 
+        You have reached your card limit. Upgrade to subscription for unlimited cards.
+    </div>
+    {% endif %}
+
+    <h3 style="color: #2d3748; margin-bottom: 20px;">
+        <i class="fas fa-id-card"></i> Your Business Cards
+    </h3>
+
+    {% if cards %}
+    <div class="card-grid">
+        {% for card in cards %}
+        <div class="card-item">
+            <div class="card-header">
+                <div>
+                    <h4 class="card-title">{{ card.name }}</h4>
+                    <p class="card-subtitle">{{ card.designation }} at {{ card.company }}</p>
+                </div>
+                <div style="text-align: right;">
+                    <i class="fas fa-id-card" style="font-size: 1.5rem; color: #667eea;"></i>
+                </div>
+            </div>
+            
+            <div style="margin-bottom: 15px;">
+                <p><i class="fas fa-phone"></i> {{ card.mobile }}</p>
+                <p><i class="fas fa-envelope"></i> {{ card.email }}</p>
+            </div>
+
+            <div class="card-actions">
+                <a href="{{ url_for('view_card', card_id=card.id) }}" class="btn btn-outline">
+                    <i class="fas fa-eye"></i> View
+                </a>
+                <a href="{{ url_for('edit_card', card_id=card.id) }}" class="btn">
+                    <i class="fas fa-edit"></i> Edit
+                </a>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    {% else %}
+    <div class="empty-state">
+        <i class="fas fa-id-card"></i>
+        <h3>No Business Cards Yet</h3>
+        <p>Create your first business card to get started!</p>
+        {% if can_create %}
+        <a href="{{ url_for('new_card') }}" class="btn btn-success">
+            <i class="fas fa-plus"></i> Create Your First Card
+        </a>
+        {% endif %}
+    </div>
+    {% endif %}
+
+    <div class="nav-links">
+        <a href="{{ url_for('logout') }}" class="btn btn-danger">
+            <i class="fas fa-sign-out-alt"></i> Logout
+        </a>
+        <a href="{{ url_for('home') }}" class="btn btn-outline">
+            <i class="fas fa-home"></i> Back to Home
+        </a>
+    </div>
+</div>
+{% endblock %}

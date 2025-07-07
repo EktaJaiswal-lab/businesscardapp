@@ -1,0 +1,57 @@
+{% extends "base.html" %}
+
+{% block title %}Business Card Generator - Home{% endblock %}
+
+{% block content %}
+<div class="card">
+    <div class="header">
+        <h1><i class="fas fa-id-card"></i> Business Card Generator</h1>
+        <p>Create professional digital business cards with QR codes and PDF downloads</p>
+    </div>
+
+    <div class="card-grid">
+        <div class="card-item">
+            <div class="card-header">
+                <i class="fas fa-user-plus" style="font-size: 2rem; color: #667eea;"></i>
+            </div>
+            <h3>New User?</h3>
+            <p>Create your account and start building your professional digital presence</p>
+            <a href="{{ url_for('register') }}" class="btn btn-success">
+                <i class="fas fa-user-plus"></i> Register Now
+            </a>
+        </div>
+
+        <div class="card-item">
+            <div class="card-header">
+                <i class="fas fa-sign-in-alt" style="font-size: 2rem; color: #667eea;"></i>
+            </div>
+            <h3>Already Registered?</h3>
+            <p>Login to manage your business cards and create new ones</p>
+            <a href="{{ url_for('login') }}" class="btn">
+                <i class="fas fa-sign-in-alt"></i> Login
+            </a>
+        </div>
+    </div>
+
+    <div style="margin-top: 40px; text-align: center;">
+        <h3 style="color: #2d3748; margin-bottom: 20px;">Features</h3>
+        <div class="card-grid">
+            <div class="card-item">
+                <i class="fas fa-qrcode" style="font-size: 2rem; color: #48bb78; margin-bottom: 15px;"></i>
+                <h4>QR Code Generation</h4>
+                <p>Generate QR codes with your contact information for easy sharing</p>
+            </div>
+            <div class="card-item">
+                <i class="fas fa-file-pdf" style="font-size: 2rem; color: #f56565; margin-bottom: 15px;"></i>
+                <h4>PDF Downloads</h4>
+                <p>Download professional PDF business cards for printing</p>
+            </div>
+            <div class="card-item">
+                <i class="fas fa-mobile-alt" style="font-size: 2rem; color: #667eea; margin-bottom: 15px;"></i>
+                <h4>Mobile Responsive</h4>
+                <p>Works perfectly on all devices - desktop, tablet, and mobile</p>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

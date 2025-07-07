@@ -1,0 +1,97 @@
+{% extends "base.html" %}
+
+{% block title %}{{ 'Edit' if card else 'New' }} Business Card - Business Card Generator{% endblock %}
+
+{% block content %}
+<div class="card">
+    <div class="header">
+        <h1>
+            <i class="fas fa-{{ 'edit' if card else 'plus' }}"></i> 
+            {{ 'Edit' if card else 'Create New' }} Business Card
+        </h1>
+        <p>{{ 'Update your business card information' if card else 'Fill in your business card details' }}</p>
+    </div>
+
+    <form method="POST" enctype="multipart/form-data">
+        <div class="form-group">
+            <label for="name">
+                <i class="fas fa-user"></i> Full Name
+            </label>
+            <input type="text" id="name" name="name" class="form-control" required 
+                   value="{{ card.name if card else '' }}" 
+                   placeholder="Enter your full name">
+        </div>
+
+        <div class="form-group">
+            <label for="designation">
+                <i class="fas fa-briefcase"></i> Job Title
+            </label>
+            <input type="text" id="designation" name="designation" class="form-control" required 
+                   value="{{ card.designation if card else '' }}" 
+                   placeholder="e.g., Software Engineer, Marketing Manager">
+        </div>
+
+        <div class="form-group">
+            <label for="company">
+                <i class="fas fa-building"></i> Company
+            </label>
+            <input type="text" id="company" name="company" class="form-control" required 
+                   value="{{ card.company if card else '' }}" 
+                   placeholder="Enter your company name">
+        </div>
+
+        <div class="form-group">
+            <label for="mobile">
+                <i class="fas fa-phone"></i> Mobile Number
+            </label>
+            <input type="tel" id="mobile" name="mobile" class="form-control" required 
+                   value="{{ card.mobile if card else '' }}" 
+                   placeholder="Enter your mobile number">
+        </div>
+
+        <div class="form-group">
+            <label for="email">
+                <i class="fas fa-envelope"></i> Email Address
+            </label>
+            <input type="email" id="email" name="email" class="form-control" required 
+                   value="{{ card.email if card else '' }}" 
+                   placeholder="Enter your email address">
+        </div>
+
+        <div class="form-group">
+            <label for="logo">
+                <i class="fas fa-image"></i> Company Logo
+            </label>
+            <div class="file-input-wrapper">
+                <input type="file" id="logo" name="logo" class="file-input" accept="image/*">
+                <label for="logo" class="file-input-label">
+                    <i class="fas fa-cloud-upload-alt"></i>
+                    {{ 'Change Logo' if card and card.logo else 'Choose Logo File' }}
+                </label>
+            </div>
+            {% if card and card.logo %}
+            <div style="margin-top: 10px;">
+                <small>Current Logo:</small><br>
+                <img src="{{ card.logo }}" alt="Current Logo" class="logo-preview" style="display: block;">
+            </div>
+            {% endif %}
+        </div>
+
+        <div style="text-align: center; margin-top: 30px;">
+            <button type="submit" class="btn btn-success">
+                <i class="fas fa-{{ 'save' if card else 'plus' }}"></i> 
+                {{ 'Update Card' if card else 'Generate Card' }}
+            </button>
+        </div>
+    </form>
+
+    <div class="nav-links">
+        <a href="{{ url_for('dashboard') }}" class="btn btn-outline">
+            <i class="fas fa-arrow-left"></i> Back to Dashboard
+        </a>
+        <a href="{{ url_for('home') }}" class="btn btn-outline">
+            <i class="fas fa-home"></i> Home
+        </a>
+    </div>
+</div>
+{% endblock %}

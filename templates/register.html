@@ -1,0 +1,67 @@
+{% extends "base.html" %}
+
+{% block title %}Register - Business Card Generator{% endblock %}
+
+{% block content %}
+<div class="card">
+    <div class="header">
+        <h1><i class="fas fa-user-plus"></i> Create Account</h1>
+        <p>Join us and start creating professional business cards</p>
+    </div>
+
+    {% if error %}
+    <div class="alert alert-error">
+        <i class="fas fa-exclamation-triangle"></i> {{ error }}
+    </div>
+    {% endif %}
+
+    <form method="POST" action="{{ url_for('register') }}">
+        <div class="form-group">
+            <label for="name">
+                <i class="fas fa-user"></i> Full Name
+            </label>
+            <input type="text" id="name" name="name" class="form-control" required 
+                   placeholder="Enter your full name">
+        </div>
+
+        <div class="form-group">
+            <label for="email">
+                <i class="fas fa-envelope"></i> Email Address
+            </label>
+            <input type="email" id="email" name="email" class="form-control" required 
+                   placeholder="Enter your email address">
+        </div>
+
+        <div class="form-group">
+            <label for="password">
+                <i class="fas fa-lock"></i> Password
+            </label>
+            <input type="password" id="password" name="password" class="form-control" required 
+                   placeholder="Create a strong password">
+        </div>
+
+        <div class="form-group">
+            <label for="role">
+                <i class="fas fa-users"></i> Account Type
+            </label>
+            <select id="role" name="role" class="form-control" required>
+                <option value="">Select your account type</option>
+                <option value="new">New User (1 card limit)</option>
+                <option value="subscription">Subscription (Unlimited cards)</option>
+                <option value="admin">Admin (Full access)</option>
+            </select>
+        </div>
+
+        <button type="submit" class="btn btn-success" style="width: 100%;">
+            <i class="fas fa-user-plus"></i> Create Account
+        </button>
+    </form>
+
+    <div class="nav-links">
+        <p>Already have an account? <a href="{{ url_for('login') }}">Login here</a></p>
+        <a href="{{ url_for('home') }}" class="btn btn-outline">
+            <i class="fas fa-home"></i> Back to Home
+        </a>
+    </div>
+</div>
+{% endblock %}
