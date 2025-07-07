@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 # Business Card Generator
 
 A Flask web application for creating and managing digital business cards with PDF generation and QR code functionality.
@@ -129,3 +130,6 @@ app.run(debug=True, port=5001)
 ## License
 
 This project is open source and available under the MIT License. 
+=======
+# businesscardapp
+>>>>>>> 0101197d7518f8b6a6d5efabaa7fb13f3f6009b7
