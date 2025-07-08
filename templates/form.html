@@ -62,20 +62,60 @@
             <label for="logo">
                 <i class="fas fa-image"></i> Company Logo
             </label>
-            <div class="file-input-wrapper">
+            <div class="file-input-wrapper" id="logo-upload-wrapper" {% if card and card.logo %}style="display:none;"{% endif %}>
                 <input type="file" id="logo" name="logo" class="file-input" accept="image/*">
                 <label for="logo" class="file-input-label">
                     <i class="fas fa-cloud-upload-alt"></i>
                     {{ 'Change Logo' if card and card.logo else 'Choose Logo File' }}
                 </label>
             </div>
-            {% if card and card.logo %}
-            <div style="margin-top: 10px;">
-                <small>Current Logo:</small><br>
-                <img src="{{ card.logo }}" alt="Current Logo" class="logo-preview" style="display: block;">
+            <div id="logo-preview-container" style="position: relative; display: {% if card and card.logo %}inline-block{% else %}none{% endif %}; margin-top: 10px;">
+                {% if card and card.logo %}
+                <img id="logo-preview-img" src="{{ card.logo }}" alt="Current Logo" style="display: block; max-width: 120px; max-height: 120px;">
+                <span id="remove-logo-btn"
+                      style="position: absolute; top: 0; right: 0; background: #fff; border: 2px solid #e53e3e; color: #e53e3e; font-size: 32px; cursor: pointer; border-radius: 50%; width: 36px; height: 36px; line-height: 32px; text-align: center; display: flex; align-items: center; justify-content: center; z-index: 9999;">&times;</span>
+                {% endif %}
             </div>
-            {% endif %}
         </div>
+        <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            var fileInput = document.getElementById('logo');
+            var logoUploadWrapper = document.getElementById('logo-upload-wrapper');
+            var logoPreviewContainer = document.getElementById('logo-preview-container');
+
+            function addRemoveBtnListener() {
+                var removeBtn = document.getElementById('remove-logo-btn');
+                if (removeBtn) {
+                    removeBtn.onclick = function() {
+                        // Remove the preview image if it exists
+                        var img = document.getElementById('logo-preview-img');
+                        if (img) img.remove();
+                        logoPreviewContainer.innerHTML = '';
+                        logoPreviewContainer.style.display = 'none';
+                        logoUploadWrapper.style.display = 'block';
+                        fileInput.value = '';
+                    };
+                }
+            }
+            addRemoveBtnListener();
+
+            // Show preview and hide upload button on file select (for new uploads)
+            if (fileInput) {
+                fileInput.addEventListener('change', function(event) {
+                    if (fileInput.files && fileInput.files[0]) {
+                        var reader = new FileReader();
+                        reader.onload = function(e) {
+                            logoPreviewContainer.innerHTML = '<img id="logo-preview-img" src="' + e.target.result + '" alt="Logo Preview" style="display: block; max-width: 120px; max-height: 120px;"><span id=\'remove-logo-btn\' style=\'position: absolute; top: 0; right: 0; background: #fff; border: 2px solid #e53e3e; color: #e53e3e; font-size: 32px; cursor: pointer; border-radius: 50%; width: 36px; height: 36px; line-height: 32px; text-align: center; display: flex; align-items: center; justify-content: center; z-index: 9999;\'>&times;</span>';
+                            logoPreviewContainer.style.display = 'inline-block';
+                            logoUploadWrapper.style.display = 'none';
+                            addRemoveBtnListener();
+                        }
+                        reader.readAsDataURL(fileInput.files[0]);
+                    }
+                });
+            }
+        });
+        </script>
 
         <div style="text-align: center; margin-top: 30px;">
             <button type="submit" class="btn btn-success">

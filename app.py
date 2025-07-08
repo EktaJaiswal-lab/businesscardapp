@@ -104,12 +104,15 @@ def new_card():
         # Generate PDF and QR
         pdf_filename = f"{name.replace(' ', '_')}_card.pdf"
         qr_filename = f"{name.replace(' ', '_')}_qr.png"
+        vcf_filename = f"{name.replace(' ', '_')}.vcf"
         
         pdf_path = os.path.join(app.config['UPLOAD_FOLDER'], pdf_filename)
         qr_path = os.path.join(app.config['UPLOAD_FOLDER'], qr_filename)
+        vcf_path = os.path.join(app.config['UPLOAD_FOLDER'], vcf_filename)
         
         generate_pdf(name, designation, company, mobile, email, pdf_path)
         generate_qr(name, designation, company, mobile, email, qr_path)
+        generate_vcard(name, designation, company, mobile, email, vcf_path)
 
         if user:
             card = BusinessCard(
@@ -121,7 +124,8 @@ def new_card():
                 email=email,
                 logo=logo_path,
                 pdf=f"/static/uploads/{pdf_filename}",
-                qr=f"/static/uploads/{qr_filename}"
+                qr=f"/static/uploads/{qr_filename}",
+                # Optionally, you can add a vcf field to the model if you want to store the path
             )
             db.session.add(card)
             db.session.commit()
@@ -162,12 +166,15 @@ def edit_card(card_id):
         # Regenerate PDF and QR
         pdf_filename = f"{card.name.replace(' ', '_')}_card.pdf"
         qr_filename = f"{card.name.replace(' ', '_')}_qr.png"
+        vcf_filename = f"{card.name.replace(' ', '_')}.vcf"
         
         pdf_path = os.path.join(app.config['UPLOAD_FOLDER'], pdf_filename)
         qr_path = os.path.join(app.config['UPLOAD_FOLDER'], qr_filename)
+        vcf_path = os.path.join(app.config['UPLOAD_FOLDER'], vcf_filename)
         
         generate_pdf(card.name, card.designation, card.company, card.mobile, card.email, pdf_path)
         generate_qr(card.name, card.designation, card.company, card.mobile, card.email, qr_path)
+        generate_vcard(card.name, card.designation, card.company, card.mobile, card.email, vcf_path)
         
         card.pdf = f"/static/uploads/{pdf_filename}"
         card.qr = f"/static/uploads/{qr_filename}"
@@ -187,6 +194,15 @@ def view_card(card_id):
                              error_icon="lock")
     
     return render_template('card.html', card=card)
+
+@app.route('/download-vcard/<name>')
+def download_vcard(name):
+    vcf_filename = f"{name.replace(' ', '_')}.vcf"
+    vcf_path = os.path.join(app.config['UPLOAD_FOLDER'], vcf_filename)
+    if os.path.exists(vcf_path):
+        return send_file(vcf_path, as_attachment=True, download_name=vcf_filename, mimetype='text/vcard')
+    else:
+        return render_template('error.html', error_title="File Not Found", error_message="❌ vCard file not found", error_icon="file")
 
 @app.route('/logout')
 def logout():
@@ -240,9 +256,15 @@ END:VCARD"""
     img = qr.make_image(fill_color="black", back_color="white")
     img.save(output_path)
 
+def generate_vcard(name, designation, company, mobile, email, output_path):
+    """Generate a vCard (.vcf) file for contact saving"""
+    vcard_data = f"""BEGIN:VCARD\nVERSION:3.0\nN:{name}\nFN:{name}\nTITLE:{designation}\nORG:{company}\nTEL;TYPE=CELL:{mobile}\nEMAIL:{email}\nEND:VCARD"""
+    with open(output_path, 'w', encoding='utf-8') as f:
+        f.write(vcard_data)
+
 if __name__ == '__main__':
     print("🚀 Starting Flask app...")
     with app.app_context():
         print("🛠 Creating all tables...")
         db.create_all()
-    app.run(debug=True)
+    app.run(debug=True, port=8000)
