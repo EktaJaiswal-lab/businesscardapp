@@ -9,6 +9,7 @@ from reportlab.lib.units import inch
 import qrcode
 from io import BytesIO
 import base64
+from sqlalchemy import not_, or_
 
 app = Flask(__name__)
 app.secret_key = 'your_secret_key_here'
@@ -22,6 +23,27 @@ os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
 
 db.init_app(app)
 
+# Ensure admin user exists on startup
+def ensure_admin_user():
+    from models import User, db
+    admin_email = "admin@gmail.com"
+    admin_password = "Ej87567@"
+    admin = User.query.filter_by(email=admin_email).first()
+    if not admin:
+        admin = User(
+            name="Admin",
+            email=admin_email,
+            password=generate_password_hash(admin_password),
+            role="admin"
+        )
+        db.session.add(admin)
+        db.session.commit()
+
+# Call this function when the app starts
+if __name__ == "__main__":
+    with app.app_context():
+        ensure_admin_user()
+
 @app.route('/')
 def home():
     return render_template('home.html')
@@ -32,7 +54,7 @@ def register():
         name = request.form['name']
         email = request.form['email']
         password = generate_password_hash(request.form['password'])
-        role = request.form['role']
+        role = 'new'
 
         if User.query.filter_by(email=email).first():
             return render_template('register.html', error="⚠️ Email already registered")
@@ -62,11 +84,34 @@ def dashboard():
 
     user = User.query.get(session['user_id'])
     if user:
-        cards = BusinessCard.query.filter_by(user_id=user.id).all()
-        can_create = not (user.role == 'new' and len(cards) >= 1)
-        return render_template('dashboard.html', user=user, cards=cards, can_create=can_create)
+        if user.role == 'admin':
+            users = User.query.filter(User.role != 'admin').all()
+            user_cards = {u.id: BusinessCard.query.filter_by(user_id=u.id).all() for u in users}
+            stats = {
+                'total_users': User.query.filter(User.role != 'admin').count(),
+                'total_cards': BusinessCard.query.count(),
+                'new_users': User.query.filter(User.role == 'new').count()
+            }
+            return render_template('admin_dashboard.html', user=user, users=users, user_cards=user_cards, stats=stats)
+        else:
+            cards = BusinessCard.query.filter_by(user_id=user.id).all()
+            can_create = user.role != 'new' or len(cards) < 1
+            return render_template('dashboard.html', user=user, cards=cards, can_create=can_create)
     else:
         return redirect(url_for('login'))
+
+@app.route('/upgrade-user/<int:user_id>', methods=['POST'])
+def upgrade_user(user_id):
+    if 'user_id' not in session:
+        return redirect(url_for('login'))
+    admin = User.query.get(session['user_id'])
+    if not admin or admin.role != 'admin':
+        return render_template('error.html', error_title="Unauthorized", error_message="Only admin can upgrade users.")
+    user = User.query.get_or_404(user_id)
+    if user.role == 'new':
+        user.role = 'subscription'
+        db.session.commit()
+    return redirect(url_for('dashboard'))
 
 @app.route('/new-card', methods=['GET', 'POST'])
 def new_card():
@@ -141,7 +186,10 @@ def new_card():
 @app.route('/edit-card/<int:card_id>', methods=['GET', 'POST'])
 def edit_card(card_id):
     card = BusinessCard.query.get_or_404(card_id)
-    if 'user_id' not in session or card.user_id != session['user_id']:
+    user = None
+    if 'user_id' in session:
+        user = User.query.get(session['user_id'])
+    if not user or (card.user_id != user.id and user.role != 'admin'):
         return render_template('error.html',
                              error_title="Unauthorized Access",
                              error_message="❌ You don't have permission to access this card",
@@ -194,6 +242,15 @@ def view_card(card_id):
                              error_icon="lock")
     
     return render_template('card.html', card=card)
+
+@app.route('/delete-card/<int:card_id>', methods=['POST'])
+def delete_card(card_id):
+    card = BusinessCard.query.get_or_404(card_id)
+    if 'user_id' not in session or card.user_id != session['user_id']:
+        return render_template('error.html', error_title="Unauthorized", error_message="You can't delete this card.")
+    db.session.delete(card)
+    db.session.commit()
+    return redirect(url_for('dashboard'))
 
 @app.route('/download-vcard/<name>')
 def download_vcard(name):

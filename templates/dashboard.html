@@ -29,6 +29,43 @@
     </div>
     {% endif %}
 
+    {% if user.role == 'admin' %}
+    <h3>All Users</h3>
+    <div class="admin-users-list">
+        {% for u in users %}
+            <div class="admin-user-block" style="border:1px solid #ccc; margin-bottom:20px; padding:15px; border-radius:8px;">
+                <div style="display:flex; justify-content:space-between; align-items:center;">
+                    <div>
+                        <strong>{{ u.name }}</strong> ({{ u.email }})<br>
+                        <span>Role: {{ u.role|title }}</span>
+                    </div>
+                    {% if u.role == 'new' %}
+                    <form method="POST" action="{{ url_for('upgrade_user', user_id=u.id) }}" style="margin:0;">
+                        <button type="submit" class="btn btn-success">Upgrade to Subscriber</button>
+                    </form>
+                    {% else %}
+                        <span style="color:green; font-weight:bold;">Subscriber</span>
+                    {% endif %}
+                </div>
+                <div style="margin-top:10px;">
+                    <strong>Cards:</strong>
+                    {% if user_cards[u.id] %}
+                        <ul>
+                        {% for card in user_cards[u.id] %}
+                            <li>
+                                {{ card.name }} ({{ card.designation }}, {{ card.company }})
+                                <a href="{{ url_for('edit_card', card_id=card.id) }}" class="btn btn-outline btn-sm" style="margin-left:10px;">Edit</a>
+                            </li>
+                        {% endfor %}
+                        </ul>
+                    {% else %}
+                        <span>No cards created.</span>
+                    {% endif %}
+                </div>
+            </div>
+        {% endfor %}
+    </div>
+{% else %}
     <h3 style="color: #2d3748; margin-bottom: 20px;">
         <i class="fas fa-id-card"></i> Your Business Cards
     </h3>
@@ -52,13 +89,18 @@
                 <p><i class="fas fa-envelope"></i> {{ card.email }}</p>
             </div>
 
-            <div class="card-actions">
-                <a href="{{ url_for('view_card', card_id=card.id) }}" class="btn btn-outline">
+            <div class="card-actions" style="display: flex; gap: 8px;">
+                <a href="{{ url_for('view_card', card_id=card.id) }}" class="btn btn-outline" style="min-width: 90px;">
                     <i class="fas fa-eye"></i> View
                 </a>
-                <a href="{{ url_for('edit_card', card_id=card.id) }}" class="btn">
+                <a href="{{ url_for('edit_card', card_id=card.id) }}" class="btn btn-outline" style="min-width: 90px;">
                     <i class="fas fa-edit"></i> Edit
                 </a>
+                <form method="POST" action="{{ url_for('delete_card', card_id=card.id) }}" style="display:inline;" onsubmit="return confirmDelete();">
+                    <button type="submit" class="btn btn-outline btn-danger" style="min-width: 90px;">
+                        <i class="fas fa-trash"></i> Delete
+                    </button>
+                </form>
             </div>
         </div>
         {% endfor %}
@@ -75,6 +117,7 @@
         {% endif %}
     </div>
     {% endif %}
+{% endif %}
 
     <div class="nav-links">
         <a href="{{ url_for('logout') }}" class="btn btn-danger">
@@ -84,5 +127,10 @@
             <i class="fas fa-home"></i> Back to Home
         </a>
     </div>
+    <script>
+    function confirmDelete() {
+        return confirm('Are you sure you want to delete this card?');
+    }
+    </script>
 </div>
 {% endblock %}
