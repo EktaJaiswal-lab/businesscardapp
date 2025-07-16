@@ -3,6 +3,8 @@
 {% block title %}{{ 'Edit' if card else 'New' }} Business Card - Business Card Generator{% endblock %}
 
 {% block content %}
+<link href="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.13/cropper.min.css" rel="stylesheet">
+
 <div class="card">
     <div class="header">
         <h1>
@@ -77,44 +79,82 @@
                 {% endif %}
             </div>
         </div>
+
+        <!-- Modal for cropping -->
+        <div id="cropper-modal" style="display:none; position:fixed; top:0; left:0; width:100vw; height:100vh; background:rgba(0,0,0,0.7); align-items:center; justify-content:center; z-index:99999;">
+            <div style="background:#fff; padding:20px; border-radius:10px; max-width:90vw; max-height:90vh;">
+                <h3 style="margin-top:0;">Crop Logo</h3>
+                <img id="cropper-image" style="max-width:400px; max-height:400px; display:block; margin:auto;">
+                <div style="text-align:center; margin-top:15px;">
+                    <button type="button" id="cropper-crop-btn" class="btn btn-success">Crop & Use</button>
+                    <button type="button" id="cropper-cancel-btn" class="btn btn-danger">Cancel</button>
+                </div>
+            </div>
+        </div>
+
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.13/cropper.min.js"></script>
         <script>
-        document.addEventListener('DOMContentLoaded', function() {
-            var fileInput = document.getElementById('logo');
-            var logoUploadWrapper = document.getElementById('logo-upload-wrapper');
-            var logoPreviewContainer = document.getElementById('logo-preview-container');
+        let cropper;
+        let cropperModal = document.getElementById('cropper-modal');
+        let cropperImage = document.getElementById('cropper-image');
+        let logoInput = document.getElementById('logo');
+        let logoPreviewContainer = document.getElementById('logo-preview-container');
+        let logoUploadWrapper = document.getElementById('logo-upload-wrapper');
 
-            function addRemoveBtnListener() {
-                var removeBtn = document.getElementById('remove-logo-btn');
-                if (removeBtn) {
-                    removeBtn.onclick = function() {
-                        // Remove the preview image if it exists
-                        var img = document.getElementById('logo-preview-img');
-                        if (img) img.remove();
-                        logoPreviewContainer.innerHTML = '';
-                        logoPreviewContainer.style.display = 'none';
-                        logoUploadWrapper.style.display = 'block';
-                        fileInput.value = '';
-                    };
+        logoInput.addEventListener('change', function(event) {
+            if (logoInput.files && logoInput.files[0]) {
+                let reader = new FileReader();
+                reader.onload = function(e) {
+                    cropperImage.src = e.target.result;
+                    cropperModal.style.display = 'flex';
+                    if (cropper) cropper.destroy();
+                    cropper = new Cropper(cropperImage, {
+                        aspectRatio: 1,
+                        viewMode: 1,
+                        autoCropArea: 1,
+                        minCropBoxWidth: 120,
+                        minCropBoxHeight: 120,
+                    });
                 }
-            }
-            addRemoveBtnListener();
-
-            // Show preview and hide upload button on file select (for new uploads)
-            if (fileInput) {
-                fileInput.addEventListener('change', function(event) {
-                    if (fileInput.files && fileInput.files[0]) {
-                        var reader = new FileReader();
-                        reader.onload = function(e) {
-                            logoPreviewContainer.innerHTML = '<img id="logo-preview-img" src="' + e.target.result + '" alt="Logo Preview" style="display: block; max-width: 120px; max-height: 120px;"><span id=\'remove-logo-btn\' style=\'position: absolute; top: 0; right: 0; background: #fff; border: 2px solid #e53e3e; color: #e53e3e; font-size: 32px; cursor: pointer; border-radius: 50%; width: 36px; height: 36px; line-height: 32px; text-align: center; display: flex; align-items: center; justify-content: center; z-index: 9999;\'>&times;</span>';
-                            logoPreviewContainer.style.display = 'inline-block';
-                            logoUploadWrapper.style.display = 'none';
-                            addRemoveBtnListener();
-                        }
-                        reader.readAsDataURL(fileInput.files[0]);
-                    }
-                });
+                reader.readAsDataURL(logoInput.files[0]);
             }
         });
+
+        document.getElementById('cropper-cancel-btn').onclick = function() {
+            cropperModal.style.display = 'none';
+            if (cropper) cropper.destroy();
+            logoInput.value = '';
+        };
+
+        document.getElementById('cropper-crop-btn').onclick = function() {
+            let canvas = cropper.getCroppedCanvas({ width: 100, height: 100 });
+            let croppedDataUrl = canvas.toDataURL('image/png');
+            // Show preview
+            logoPreviewContainer.innerHTML = '<img id="logo-preview-img" src="' + croppedDataUrl + '" alt="Logo Preview" style="display: block; max-width: 100px; max-height: 100px;"><span id="remove-logo-btn" style="position: absolute; top: 0; right: 0; background: #fff; border: 2px solid #e53e3e; color: #e53e3e; font-size: 32px; cursor: pointer; border-radius: 50%; width: 36px; height: 36px; line-height: 32px; text-align: center; display: flex; align-items: center; justify-content: center; z-index: 9999;">&times;</span>';
+            logoPreviewContainer.style.display = 'inline-block';
+            logoUploadWrapper.style.display = 'none';
+            cropperModal.style.display = 'none';
+            if (cropper) cropper.destroy();
+            // Convert dataURL to Blob and set as file input (for upload)
+            fetch(croppedDataUrl)
+                .then(res => res.blob())
+                .then(blob => {
+                    let file = new File([blob], 'cropped_logo.png', { type: 'image/png' });
+                    let dataTransfer = new DataTransfer();
+                    dataTransfer.items.add(file);
+                    logoInput.files = dataTransfer.files;
+                });
+            // Remove/cancel button logic
+            let removeBtn = document.getElementById('remove-logo-btn');
+            if (removeBtn) {
+                removeBtn.onclick = function() {
+                    logoPreviewContainer.innerHTML = '';
+                    logoPreviewContainer.style.display = 'none';
+                    logoUploadWrapper.style.display = 'block';
+                    logoInput.value = '';
+                };
+            }
+        };
         </script>
 
         <div style="text-align: center; margin-top: 30px;">

@@ -24,8 +24,8 @@
             <div style="font-size:2em;font-weight:bold;">{{ stats.total_cards }}</div>
         </div>
         <div style="flex:1;min-width:220px;background:#f5f7fa;padding:18px 24px;border-radius:10px;">
-            <h3 style="margin:0 0 8px 0;color:#4a90e2;"><i class="fas fa-user-plus"></i> New Users</h3>
-            <div style="font-size:2em;font-weight:bold;">{{ stats.new_users }}</div>
+            <h3 style="margin:0 0 8px 0;color:#4a90e2;"><i class="fas fa-user-plus"></i> Subscribers</h3>
+            <div style="font-size:2em;font-weight:bold;">{{ stats.subscribers }}</div>
         </div>
     </div>
     <hr style="margin:32px 0;">
@@ -36,14 +36,29 @@
                 <div style="display:flex; justify-content:space-between; align-items:center;">
                     <div>
                         <strong>{{ u.name }}</strong> ({{ u.email }})<br>
-                        <span>Role: {{ u.role|title }}</span>
+                        <span>Role: 
+    {% if u.role == 'subscription' or u.role == 'new' %}
+        Subscriber
+    {% elif u.role == 'admin' %}
+        Admin
+    {% else %}
+        {{ u.role|title }}
+    {% endif %}
+</span>
                     </div>
                     {% if u.role == 'new' %}
-                    <form method="POST" action="{{ url_for('upgrade_user', user_id=u.id) }}" style="margin:0;">
-                        <button type="submit" class="btn btn-success">Upgrade to Subscriber</button>
+                    <form method="POST" action="{{ url_for('upgrade_user', user_id=u.id) }}" style="margin:0;" class="upgrade-form" data-username="{{ u.name }}" data-userid="{{ u.id }}">
+                        <button type="button" class="btn btn-success upgrade-btn">Upgrade to Subscriber</button>
                     </form>
+                    {% elif u.role == 'subscription' %}
+                        <div style="display: flex; flex-direction: column; align-items: flex-end;">
+                            <span class="subscriber-label" style="color:green; font-weight:bold; font-size:1.1em;">Subscriber</span>
+                            <form method="POST" action="{{ url_for('unsubscribe_user', user_id=u.id) }}" style="margin-top:8px;" class="unsubscribe-form" data-username="{{ u.name }}" data-userid="{{ u.id }}">
+                                <button type="button" class="btn btn-danger unsubscribe-btn">Unsubscribe</button>
+                            </form>
+                        </div>
                     {% else %}
-                        <span style="color:green; font-weight:bold;">Subscriber</span>
+                        <span class="subscriber-label" style="color:green; font-weight:bold; font-size:1.1em;">Subscriber</span>
                     {% endif %}
                 </div>
                 <div style="margin-top:10px;">
@@ -65,4 +80,141 @@
         {% endfor %}
     </div>
 </div>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    document.querySelectorAll('.upgrade-btn').forEach(function(btn) {
+        btn.addEventListener('click', function(e) {
+            var form = btn.closest('.upgrade-form');
+            var userName = form.getAttribute('data-username');
+            var userId = form.getAttribute('data-userid');
+            if (confirm('You are upgrading ' + userName + ' to Subscriber. Now upgraded to Subscriber.')) {
+                fetch('/upgrade-user/' + userId, {
+                    method: 'POST',
+                    headers: { 'X-Requested-With': 'XMLHttpRequest' }
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        var label = document.createElement('span');
+                        label.className = 'subscriber-label';
+                        label.style.color = 'green';
+                        label.style.fontWeight = 'bold';
+                        label.style.fontSize = '1.1em';
+                        label.textContent = 'Subscriber';
+                        // Add Unsubscribe button below
+                        var unsubForm = document.createElement('form');
+                        unsubForm.method = 'POST';
+                        unsubForm.action = '/unsubscribe-user/' + userId;
+                        unsubForm.style.marginTop = '8px';
+                        unsubForm.className = 'unsubscribe-form';
+                        unsubForm.setAttribute('data-username', userName);
+                        unsubForm.setAttribute('data-userid', userId);
+                        var unsubBtn = document.createElement('button');
+                        unsubBtn.type = 'button';
+                        unsubBtn.className = 'btn btn-danger unsubscribe-btn';
+                        unsubBtn.textContent = 'Unsubscribe';
+                        unsubForm.appendChild(unsubBtn);
+                        var parent = form.parentNode;
+                        parent.replaceChild(label, form);
+                        parent.appendChild(unsubForm);
+                        attachUnsubscribeHandler(unsubBtn, unsubForm, userName, userId);
+                    } else {
+                        alert('Upgrade failed: ' + (data.error || 'Unknown error'));
+                    }
+                })
+                .catch(() => alert('Network error. Please try again.'));
+            }
+        });
+    });
+    function attachUnsubscribeHandler(btn, form, userName, userId) {
+        btn.addEventListener('click', function(e) {
+            if (confirm('You are unsubscribing ' + userName + '. Now downgraded to New User.')) {
+                fetch('/unsubscribe-user/' + userId, {
+                    method: 'POST',
+                    headers: { 'X-Requested-With': 'XMLHttpRequest' }
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        var label = document.createElement('span');
+                        label.className = 'subscriber-label';
+                        label.style.color = 'green';
+                        label.style.fontWeight = 'bold';
+                        label.style.fontSize = '1.1em';
+                        label.textContent = 'Subscriber';
+                        // Replace form with upgrade button again
+                        var upgradeForm = document.createElement('form');
+                        upgradeForm.method = 'POST';
+                        upgradeForm.action = '/upgrade-user/' + userId;
+                        upgradeForm.style.margin = '0';
+                        upgradeForm.className = 'upgrade-form';
+                        upgradeForm.setAttribute('data-username', userName);
+                        upgradeForm.setAttribute('data-userid', userId);
+                        var upgradeBtn = document.createElement('button');
+                        upgradeBtn.type = 'button';
+                        upgradeBtn.className = 'btn btn-success upgrade-btn';
+                        upgradeBtn.textContent = 'Upgrade to Subscriber';
+                        upgradeForm.appendChild(upgradeBtn);
+                        var parent = form.parentNode;
+                        parent.replaceChild(upgradeForm, form);
+                        parent.insertBefore(label, upgradeForm);
+                        // Re-attach upgrade handler
+                        upgradeBtn.addEventListener('click', function(e) {
+                            var form = upgradeBtn.closest('.upgrade-form');
+                            var userName = form.getAttribute('data-username');
+                            var userId = form.getAttribute('data-userid');
+                            if (confirm('You are upgrading ' + userName + ' to Subscriber. Now upgraded to Subscriber.')) {
+                                fetch('/upgrade-user/' + userId, {
+                                    method: 'POST',
+                                    headers: { 'X-Requested-With': 'XMLHttpRequest' }
+                                })
+                                .then(response => response.json())
+                                .then(data => {
+                                    if (data.success) {
+                                        var label = document.createElement('span');
+                                        label.className = 'subscriber-label';
+                                        label.style.color = 'green';
+                                        label.style.fontWeight = 'bold';
+                                        label.style.fontSize = '1.1em';
+                                        label.textContent = 'Subscriber';
+                                        var unsubForm = document.createElement('form');
+                                        unsubForm.method = 'POST';
+                                        unsubForm.action = '/unsubscribe-user/' + userId;
+                                        unsubForm.style.marginTop = '8px';
+                                        unsubForm.className = 'unsubscribe-form';
+                                        unsubForm.setAttribute('data-username', userName);
+                                        unsubForm.setAttribute('data-userid', userId);
+                                        var unsubBtn = document.createElement('button');
+                                        unsubBtn.type = 'button';
+                                        unsubBtn.className = 'btn btn-danger unsubscribe-btn';
+                                        unsubBtn.textContent = 'Unsubscribe';
+                                        unsubForm.appendChild(unsubBtn);
+                                        var parent = upgradeForm.parentNode;
+                                        parent.replaceChild(label, upgradeForm);
+                                        parent.appendChild(unsubForm);
+                                        alert(userName + ' is now upgraded to Subscriber.');
+                                        attachUnsubscribeHandler(unsubBtn, unsubForm, userName, userId);
+                                    } else {
+                                        alert('Upgrade failed: ' + (data.error || 'Unknown error'));
+                                    }
+                                })
+                                .catch(() => alert('Network error. Please try again.'));
+                            }
+                        });
+                    } else {
+                        alert('Unsubscribe failed: ' + (data.error || 'Unknown error'));
+                    }
+                })
+                .catch(() => alert('Network error. Please try again.'));
+            }
+        });
+    }
+    document.querySelectorAll('.unsubscribe-btn').forEach(function(btn) {
+        var form = btn.closest('.unsubscribe-form');
+        var userName = form.getAttribute('data-username');
+        var userId = form.getAttribute('data-userid');
+        attachUnsubscribeHandler(btn, form, userName, userId);
+    });
+});
+</script>
 {% endblock %} 

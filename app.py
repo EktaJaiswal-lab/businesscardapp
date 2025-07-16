@@ -88,9 +88,9 @@ def dashboard():
             users = User.query.filter(User.role != 'admin').all()
             user_cards = {u.id: BusinessCard.query.filter_by(user_id=u.id).all() for u in users}
             stats = {
-                'total_users': User.query.filter(User.role != 'admin').count(),
+                'total_users': User.query.filter(or_(User.role == 'subscription', User.role == 'new')).count(),
                 'total_cards': BusinessCard.query.count(),
-                'new_users': User.query.filter(User.role == 'new').count()
+                'subscribers': User.query.filter(or_(User.role == 'subscription', User.role == 'new')).count()
             }
             return render_template('admin_dashboard.html', user=user, users=users, user_cards=user_cards, stats=stats)
         else:
@@ -103,14 +103,45 @@ def dashboard():
 @app.route('/upgrade-user/<int:user_id>', methods=['POST'])
 def upgrade_user(user_id):
     if 'user_id' not in session:
+        if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+            return {'success': False, 'error': 'Not logged in'}, 401
         return redirect(url_for('login'))
     admin = User.query.get(session['user_id'])
     if not admin or admin.role != 'admin':
+        if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+            return {'success': False, 'error': 'Unauthorized'}, 403
         return render_template('error.html', error_title="Unauthorized", error_message="Only admin can upgrade users.")
     user = User.query.get_or_404(user_id)
     if user.role == 'new':
         user.role = 'subscription'
         db.session.commit()
+        if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+            return {'success': True}
+    else:
+        if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+            return {'success': False, 'error': 'User is not new'}, 400
+    return redirect(url_for('dashboard'))
+
+@app.route('/unsubscribe-user/<int:user_id>', methods=['POST'])
+def unsubscribe_user(user_id):
+    if 'user_id' not in session:
+        if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+            return {'success': False, 'error': 'Not logged in'}, 401
+        return redirect(url_for('login'))
+    admin = User.query.get(session['user_id'])
+    if not admin or admin.role != 'admin':
+        if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+            return {'success': False, 'error': 'Unauthorized'}, 403
+        return render_template('error.html', error_title="Unauthorized", error_message="Only admin can unsubscribe users.")
+    user = User.query.get_or_404(user_id)
+    if user.role == 'subscription':
+        user.role = 'new'
+        db.session.commit()
+        if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+            return {'success': True}
+    else:
+        if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+            return {'success': False, 'error': 'User is not a subscriber'}, 400
     return redirect(url_for('dashboard'))
 
 @app.route('/new-card', methods=['GET', 'POST'])
